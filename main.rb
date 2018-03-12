@@ -47,6 +47,20 @@ class Node
 		@parents
 	end
 
+	def ancestor(net)
+		res = []
+		if !@parents.nil?
+			res = @parents.clone
+			@parents.each do |p|
+				if !p.nil?
+					new_p = net.find p
+					res += new_p.ancestor(net)
+				end
+			end 
+		end
+		res
+	end
+
 	def distr
 		@distr
 	end
@@ -84,7 +98,7 @@ def main
 			node.set_distr line[1].to_f
 		end
 	end
-	nodes.print_all
+	# nodes.print_all
 
 	# Read the queries
 	n = $stdin.readline.to_i
@@ -93,24 +107,21 @@ def main
 		parts = line.split '|'
 		query = parts[0]
 		if parts.length == 1 then # If the query consists only of one node (no evidence)
-			puts probability_of(query, nodes)
+			puts probability_of(query, nodes).round(7)
 		else
 			evidence = parts[1]
 			upper = "#{query},#{evidence}"
-			puts upper
-			puts "Query"
-			puts probability_of(upper, nodes)
-			puts "Evidence"
-			puts probability_of(evidence, nodes)
-			puts "Result"
-			puts probability_of(upper, nodes) / probability_of(evidence, nodes)
-
+	
+			res = probability_of(upper, nodes) / probability_of(evidence, nodes)
+			puts res.round(7)
 		end
 	end
 end
 
 # Compute the probability of the given string, looking for intersections or nodes by themselves
 def probability_of(query, net)
+
+
 	parts = query.split ','
 	if parts.length == 1 then  # Only one node
 		node = net.find(query[1..-1])
@@ -135,19 +146,49 @@ def probability_of(query, net)
 		end
 
 	else
-		# Chain rule
+		involved_nodes = query.gsub('+', '')
+		involved_nodes.gsub!('-', '')
+		involved_nodes = involved_nodes.split(',')
+		parents_added = 0
+		new_queries = [query]
+
+		parts.each do |p|
+			node = net.find(p[1..-1])
+			if !node.parents.nil? then
+				# For each parent that is not included yet
+				if !(node.ancestor(net) - involved_nodes).nil? then
+					(node.ancestor(net) - involved_nodes).each do |a|
+						involved_nodes.push a
+						parents_added += 1
+						new_queries *= 2
+						for i in 0..(parents_added)-1
+							new_queries[i] += ",+#{a}"
+							new_queries[(parents_added * 2)-1-i] += ",-#{a}"
+						end
+					end
+				end
+			end
+		end
+		sum = 0
+		new_queries.each do |q|
+			sum += chain_rule(q, net)
+		end
+
+		return sum
+
 	end
 end
 
 
 def chain_rule(query, net)
-	involved_nodes = query.gsub('+', '')
-	involved_nodes.gsub!('-', '')
-	involved_nodes = involved_nodes.split(',')
-	parents_added = 0
-	new_queries = [query]
 
 	parts = query.split ','
+	
+	involved_nodes = Hash.new
+	parts.each do |p|
+		involved_nodes.merge!({p[1..-1] => p[0]})
+	end
+	
 	if parts.length > 1 then
 		res = 1
 		parts.each do |p|
@@ -160,28 +201,26 @@ def chain_rule(query, net)
 					res *= (1-node.distr)
 				end
 			else
-				# For each parent that is not included yet
-				(node.parents - involved_nodes).each do |a|
-					involved_nodes.push a
-					parents_added += 1
-					new_queries *= 2
-					for i in 0..(parents_added)-1
-						new_queries[i] += ",+#{a}"
-						new_queries[(parents_added * 2)-1-i] += ",-#{a}"
-					end
+				# Find the prob in distr with the given nodes
+				# and symbols in the query, split or do anything necessary with it
+				ordered_query = ""
+				node.parents.each do |parent|
+					ordered_query += involved_nodes[parent] + parent + ","
+				end
+				if sign == '+'
+					res *= node.distr[ordered_query[0..-2]]
+				else
+					res *= (1 - node.distr[ordered_query[0..-2]])
 				end
 
-				new_queries.each do |q|
-					res *= chain_rule(q, net)
-				end
 			end
 		end
 		return res
 	end
 
-			signs = []
+			# signs = []
 
-			no_dups = signs.permutation(3).to_a.uniq
+			# no_dups = signs.permutation(3).to_a.uniq
 
 end
 
