@@ -12,6 +12,7 @@ class Network
 		@net.find {|node| node.name_ == name_}
 	end
 
+	# This function was done just for debugging purposes
 	def print_all
 		@net.each do |n|
 			print n.inspect
@@ -121,7 +122,6 @@ end
 # Compute the probability of the given string, looking for intersections or nodes by themselves
 def probability_of(query, net)
 
-
 	parts = query.split ','
 	if parts.length == 1 then  # Only one node
 		node = net.find(query[1..-1])
@@ -217,10 +217,6 @@ def chain_rule(query, net)
 		end
 		return res
 	end
-
-			# signs = []
-
-			# no_dups = signs.permutation(3).to_a.uniq
 
 end
 
