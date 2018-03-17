@@ -1,0 +1,16 @@
+Excercise,Be_fit,Tired,Hungry
+9
++Excercise=0.4
++Be_fit|+Tired,+Excercise=0.9
++Be_fit|+Tired,-Excercise=0.3
++Be_fit|-Tired,+Excercise=0.4
++Be_fit|-Tired,-Excercise=0.3
++Tired|+Excercise=0.7
++Tired|-Excercise=0.8
++Hungry|+Tired=0.8
++Hungry|-Tired=0.7
+4
+-Hungry
+-Be_fit|+Hungry,+Tired
++Excercise|-Hungry,-Be_fit
++Tired|-Hungry,+Be_fit,+Excercise
